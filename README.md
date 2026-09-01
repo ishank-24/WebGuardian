@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # WebGuardian — Privacy Guardian
 
 Privacy-policy analysis module for the WebGuardian hackathon project.
@@ -167,3 +168,7 @@ webguardian/
 ├── README.md
 └── .gitignore
 ```
+=======
+# WebGuardian
+Spider-Sense for internet
+>>>>>>> eb59058aba53b0de2f2f4f61807229a2cadce158

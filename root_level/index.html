@@ -1,0 +1,537 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WebGuardian — Solo Leveling Hunter Command Center</title>
+  <link rel="icon" type="image/png" href="assets/icons/icon-32.png">
+  <link rel="stylesheet" href="style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800;900&family=Rajdhani:wght@500;600;700;800&family=Inter:wght@300;400;500;600;700&family=Fira+Code:wght@400;500;600&display=swap" rel="stylesheet">
+</head>
+<body class="hunter-os-body">
+
+  <!-- Ambient Particle Canvas (Mana / Cyber Sparks) -->
+  <canvas id="mana-particles-canvas"></canvas>
+
+  <!-- Laptop Main Command Center Layout -->
+  <div class="laptop-command-center">
+
+    <!-- Cyberpunk Top Navigation Bar -->
+    <header class="top-nav-bar">
+      <div class="nav-brand-group">
+        <div class="brand-logo-glow">
+          <img src="assets/icons/icon-48.png" alt="Spider Logo" class="nav-brand-icon">
+        </div>
+        <div class="brand-text">
+          <span class="brand-badge">WEBGUARDIAN HUNTER OS</span>
+          <h1 class="brand-name">SPIDER-SENSE SYSTEM</h1>
+        </div>
+        <div class="system-status-indicator" id="backend-status-pill">
+          <span class="status-pulse-led"></span>
+          <span class="status-label" id="backend-label-text">SYSTEM ONLINE (AUTONOMOUS ENGINE)</span>
+        </div>
+      </div>
+
+      <!-- Quick Demo Scenario Switcher (12h Hackathon Demo) -->
+      <div class="demo-preset-dock">
+        <span class="dock-label">DEMO SCENARIOS:</span>
+        <button class="btn-scenario active" data-scenario="phishing" id="preset-phishing">
+          <span class="scenario-icon">🚨</span> Phishing Attack
+        </button>
+        <button class="btn-scenario" data-scenario="manipulation" id="preset-manip">
+          <span class="scenario-icon">🎭</span> Dark Pattern
+        </button>
+        <button class="btn-scenario" data-scenario="privacy" id="preset-privacy">
+          <span class="scenario-icon">👁️</span> Privacy Invasive
+        </button>
+        <button class="btn-scenario" data-scenario="safe" id="preset-safe">
+          <span class="scenario-icon">🛡️</span> Clean Safe Site
+        </button>
+      </div>
+
+      <div class="nav-controls">
+        <button class="nav-action-btn" id="btn-audio-toggle" title="Toggle Sci-Fi SFX">
+          <span id="audio-icon">🔊</span> AUDIO: ON
+        </button>
+        <a href="demo-sites/phishing.html" target="_blank" class="nav-action-btn highlight-btn">
+          🌐 Open Demo Pages
+        </a>
+      </div>
+    </header>
+
+    <!-- Target URL Inspection Bar -->
+    <section class="target-inspector-bar">
+      <div class="inspector-inner">
+        <div class="inspector-label">
+          <span class="radar-ping-dot"></span>
+          <span class="label-text">TARGET INSPECTION STREAM:</span>
+        </div>
+        <div class="url-input-box">
+          <input type="text" id="target-url-input" class="cyber-url-input" value="https://secure-login-verify.net/account/auth" placeholder="Enter any target website URL to awaken Spider-Sense...">
+          <button id="btn-inspect-url" class="btn-scan-trigger">
+            <span class="btn-sparkle">⚡</span>
+            <span>AWAKEN SPIDER-SENSE</span>
+          </button>
+        </div>
+        <div class="quick-telemetry-tags">
+          <span class="quick-pill danger" id="quick-pwd-ind">🔒 Password: DETECTED</span>
+          <span class="quick-pill warning" id="quick-urg-ind">⚡ Urgency: HIGH</span>
+          <span class="quick-pill danger" id="quick-dom-ind">🌐 Domain: SUSPICIOUS</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Hero Header Banner: Solo Leveling Title & Hunter Halo Silhouette -->
+    <section class="hunter-hero-banner">
+      <div class="corner-rune top-left"></div>
+      <div class="corner-rune top-right"></div>
+      <div class="corner-rune bottom-left"></div>
+      <div class="corner-rune bottom-right"></div>
+
+      <div class="hero-left-col">
+        <div class="hero-subheading">
+          <span class="system-glyph">ᛟ</span>
+          <span>SYSTEM AWAKENING PROTOCOL // 17·EMK TO QTINL</span>
+        </div>
+        <h1 class="hero-main-title">
+          SOLO LEVELING<br>
+          <span class="hero-gradient-text">DEFENSE SYSTEM</span>
+        </h1>
+        <div class="hero-badges-row">
+          <div class="rank-badge-pill" id="hunter-rank-title">
+            <span class="star-icon">★</span> S-RANK WEB GUARDIAN
+          </div>
+          <div class="telemetry-pill">
+            <span>ACTIVE DEFENSE: </span><b id="seeatty-num">94.0</b> THREAT INDEX
+          </div>
+          <div class="live-clock-pill">
+            <span>SYS CLOCK: </span><b id="live-clock">20:45</b>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Side: Glowing Awakened Hunter Halo Ring & Silhouette -->
+      <div class="hero-right-col">
+        <div class="hunter-halo-container">
+          <div class="halo-ambient-aura"></div>
+          <div class="halo-rotating-runes">
+            <svg viewBox="0 0 160 160" class="halo-compass-svg">
+              <circle cx="80" cy="80" r="74" fill="none" stroke="#d946ef" stroke-width="1.5" stroke-dasharray="8 4"/>
+              <circle cx="80" cy="80" r="66" fill="none" stroke="#a855f7" stroke-width="2" stroke-dasharray="40 20 10 20"/>
+              <!-- Compass Cardinals -->
+              <line x1="80" y1="4" x2="80" y2="14" stroke="#f472b6" stroke-width="3"/>
+              <line x1="80" y1="146" x2="80" y2="156" stroke="#f472b6" stroke-width="3"/>
+              <line x1="4" y1="80" x2="14" y2="80" stroke="#f472b6" stroke-width="3"/>
+              <line x1="146" y1="80" x2="156" y2="80" stroke="#f472b6" stroke-width="3"/>
+            </svg>
+          </div>
+          <div class="hunter-avatar-disc">
+            <svg viewBox="0 0 100 100" class="hunter-silhouette-svg">
+              <defs>
+                <radialGradient id="portalBg" cx="50%" cy="50%" r="50%">
+                  <stop offset="0%" stop-color="#3b1d6e" />
+                  <stop offset="70%" stop-color="#190b30" />
+                  <stop offset="100%" stop-color="#0a0314" />
+                </radialGradient>
+                <linearGradient id="eyeGlowGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#38bdf8" />
+                  <stop offset="100%" stop-color="#818cf8" />
+                </linearGradient>
+              </defs>
+              <circle cx="50" cy="50" r="48" fill="url(#portalBg)"/>
+              
+              <!-- Hooded Hunter Silhouette -->
+              <path d="M50 14 C35 14 26 28 26 44 C26 58 32 66 22 84 C34 86 66 86 78 84 C68 66 74 58 74 44 C74 28 65 14 50 14 Z" fill="#180a2b"/>
+              <path d="M50 20 C38 20 32 30 32 44 C32 52 36 58 38 68 C44 70 56 70 62 68 C64 58 68 52 68 44 C68 30 62 20 50 20 Z" fill="#291147"/>
+              <path d="M50 22 L45 32 L40 28 L38 38 L35 34 L36 44 L44 38 L48 44 L50 36 L54 44 L58 38 L65 44 L64 34 L62 38 L60 28 L55 32 Z" fill="#441b75"/>
+              
+              <!-- Awakened Glowing Eyes -->
+              <ellipse cx="44" cy="45" rx="3.8" ry="1.8" fill="url(#eyeGlowGrad)" class="hunter-glow-eye"/>
+              <ellipse cx="56" cy="45" rx="3.8" ry="1.8" fill="url(#eyeGlowGrad)" class="hunter-glow-eye"/>
+              <circle cx="44" cy="45" r="1.2" fill="#ffffff"/>
+              <circle cx="56" cy="45" r="1.2" fill="#ffffff"/>
+              
+              <!-- Cloak -->
+              <path d="M12 96 C24 82 40 76 50 76 C60 76 76 82 88 96 Z" fill="#0d0417"/>
+            </svg>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Main Laptop 3-Column Command Grid -->
+    <main class="laptop-grid-layout">
+
+      <!-- LEFT COLUMN: Threat Spectrum & Credential Interceptor -->
+      <div class="grid-column col-left">
+
+        <!-- Card 1: Hav k Slog (Threat Spectrum Bar Matrix) -->
+        <section class="command-card card-havk-slog">
+          <div class="card-header-bar">
+            <div class="card-title-group">
+              <span class="card-dot-icon"></span>
+              <h3 class="card-title-text">Hav k Slog // Threat Spectrum</h3>
+            </div>
+            <span class="pill-badge-mini" id="havk-pill-tag">Goal Threat: 94%</span>
+          </div>
+
+          <div class="bar-matrix-rows">
+            <!-- Row 1: DNS & Domain Threat -->
+            <div class="matrix-row">
+              <span class="row-tag">Writing (DNS)</span>
+              <div class="bar-track">
+                <div class="bar-fill fill-magenta" id="bar-dns" style="width: 90%;"></div>
+              </div>
+              <span class="row-value" id="val-dns">90.0%</span>
+            </div>
+
+            <!-- Row 2: Credential Interception -->
+            <div class="matrix-row">
+              <span class="row-tag">Kjn Heck (Auth)</span>
+              <div class="bar-track">
+                <div class="bar-fill fill-violet" id="bar-cred" style="width: 95%;"></div>
+              </div>
+              <span class="row-value" id="val-cred">95.0%</span>
+            </div>
+
+            <!-- Row 3: Psychological Urgency -->
+            <div class="matrix-row">
+              <span class="row-tag">Eculgy (Urgency)</span>
+              <div class="bar-track">
+                <div class="bar-fill fill-pink" id="bar-urgency" style="width: 70%;"></div>
+              </div>
+              <span class="row-value" id="val-urg">70.0%</span>
+            </div>
+
+            <!-- Row 4: Data Monetization -->
+            <div class="matrix-row">
+              <span class="row-tag">Crenweting (Data)</span>
+              <div class="bar-track">
+                <div class="bar-fill fill-rose" id="bar-data" style="width: 65%;"></div>
+              </div>
+              <span class="row-value" id="val-data">65.0%</span>
+            </div>
+
+            <!-- Row 5: Tracker Density -->
+            <div class="matrix-row">
+              <span class="row-tag">Vkrleo lumd (Track)</span>
+              <div class="bar-track">
+                <div class="bar-fill fill-indigo" id="bar-trackers" style="width: 60%;"></div>
+              </div>
+              <span class="row-value" id="val-track">60.0%</span>
+            </div>
+
+            <!-- Row 6: Grounding Integrity -->
+            <div class="matrix-row">
+              <span class="row-tag">Harve Millty (Evid)</span>
+              <div class="bar-track">
+                <div class="bar-fill fill-cyan" id="bar-ground" style="width: 88%;"></div>
+              </div>
+              <span class="row-value" id="val-ground">88.0%</span>
+            </div>
+
+            <!-- X-Axis Timeline Markers -->
+            <div class="chart-timeline-axis">
+              <span>50m</span>
+              <span>4vm</span>
+              <span>16m</span>
+              <span>25m</span>
+              <span>1.0m</span>
+              <span>50m</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- Card 2: Goal Forms (Credential & Form Interceptor) -->
+        <section class="command-card card-goal-forms">
+          <div class="card-header-bar">
+            <div class="card-title-group">
+              <span class="card-dot-icon"></span>
+              <h3 class="card-title-text">Goal Forms // Form Interception</h3>
+            </div>
+            <span class="radar-status-badge">ACTIVE DOM</span>
+          </div>
+
+          <div class="goal-forms-body">
+            <div class="form-indicators-list">
+              
+              <div class="form-status-row active-danger" id="form-item-password">
+                <div class="row-icon-disc">🔒</div>
+                <div class="row-info-col">
+                  <span class="row-main-title">Uscee Dente!</span>
+                  <span class="row-sub-title">Password Input Field Active</span>
+                </div>
+                <span class="row-numeric-badge" id="form-pwd-count">103.017</span>
+              </div>
+
+              <div class="form-status-row active-warn" id="form-item-urgency">
+                <div class="row-icon-disc">⚡</div>
+                <div class="row-info-col">
+                  <span class="row-main-title">Video Editing</span>
+                  <span class="row-sub-title">Urgency Lexicon Match</span>
+                </div>
+                <span class="row-numeric-badge" id="form-urg-count">166.032</span>
+              </div>
+
+            </div>
+
+            <!-- Side-by-Side Liquid Level Tanks -->
+            <div class="fluid-tanks-container">
+              <div class="liquid-tank">
+                <div class="liquid-fluid fluid-danger" id="tank-1" style="height: 95%;"></div>
+                <span class="liquid-pct">95%</span>
+              </div>
+              <div class="liquid-tank">
+                <div class="liquid-fluid fluid-warning" id="tank-2" style="height: 70%;"></div>
+                <span class="liquid-pct">70%</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+      </div>
+
+      <!-- CENTER COLUMN: Core Concentric Radar & Equalizer Telemetry -->
+      <div class="grid-column col-center">
+
+        <!-- Card 1: Skill Points (Glowing Concentric Circular Radar Gauge) -->
+        <section class="command-card card-skill-radar-core">
+          <div class="card-header-bar">
+            <div class="card-title-group">
+              <span class="card-dot-icon pulse-dot"></span>
+              <h3 class="card-title-text">Skill Points // Spider-Sense Radar</h3>
+            </div>
+            <span class="rank-tag-glow" id="dash-risk-rank">CRITICAL RISK</span>
+          </div>
+
+          <div class="concentric-radar-centerpiece">
+            <div class="svg-radar-wrapper">
+              <svg viewBox="0 0 200 200" class="laptop-radar-svg">
+                <!-- Background Tracks -->
+                <circle cx="100" cy="100" r="85" class="radar-track-circle outer"/>
+                <circle cx="100" cy="100" r="66" class="radar-track-circle mid"/>
+                <circle cx="100" cy="100" r="48" class="radar-track-circle inner"/>
+
+                <!-- Quadrant Division Lines -->
+                <line x1="100" y1="10" x2="100" y2="190" stroke="rgba(168,85,247,0.2)" stroke-width="1.5" stroke-dasharray="4 2"/>
+                <line x1="10" y1="100" x2="190" y2="100" stroke="rgba(168,85,247,0.2)" stroke-width="1.5" stroke-dasharray="4 2"/>
+
+                <!-- Animated Concentric Colored Indicator Arcs -->
+                <circle id="dash-threat-arc" cx="100" cy="100" r="85" class="laptop-radar-arc arc-threat" stroke-dasharray="534" stroke-dashoffset="26"/>
+                <circle id="dash-manip-arc" cx="100" cy="100" r="66" class="laptop-radar-arc arc-manip" stroke-dasharray="414" stroke-dashoffset="124"/>
+                <circle id="dash-priv-arc" cx="100" cy="100" r="48" class="laptop-radar-arc arc-priv" stroke-dasharray="301" stroke-dashoffset="105"/>
+
+                <!-- Compass Tick Digits -->
+                <text x="94" y="32" class="radar-numeric-tick">10</text>
+                <text x="52" y="76" class="radar-numeric-tick">23</text>
+                <text x="56" y="130" class="radar-numeric-tick">33</text>
+                <text x="142" y="90" class="radar-numeric-tick">8</text>
+              </svg>
+
+              <!-- Center Spider-Sense Score Readout -->
+              <div class="radar-core-readout">
+                <span class="core-score-num" id="dash-spider-score">94</span>
+                <span class="core-score-denom">/ 100</span>
+                <span class="core-score-sub">SPIDER-SENSE</span>
+              </div>
+            </div>
+
+            <!-- Triple Guardian Category Breakdown -->
+            <div class="triple-guardian-strip">
+              <div class="guardian-stat-pill threat-pill">
+                <span class="g-num" id="stat-threat-val">95%</span>
+                <span class="g-lbl">Threat Guardian (50%)</span>
+              </div>
+              <div class="guardian-stat-pill manip-pill">
+                <span class="g-num" id="stat-manip-val">70%</span>
+                <span class="g-lbl">Manipulation (25%)</span>
+              </div>
+              <div class="guardian-stat-pill priv-pill">
+                <span class="g-num" id="stat-priv-val">65%</span>
+                <span class="g-lbl">Privacy Extractor (25%)</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Card 2: Creativity (Live Dynamic DOM Frequency Equalizer) -->
+        <section class="command-card card-creativity">
+          <div class="card-header-bar">
+            <div class="card-title-group">
+              <span class="card-dot-icon"></span>
+              <h3 class="card-title-text">Creativity // DOM Frequency Matrix</h3>
+            </div>
+            <span class="pill-badge-outline">Oundom: 210</span>
+          </div>
+
+          <div class="equalizer-display-container">
+            <div class="eq-y-axis">
+              <span>80</span>
+              <span>20</span>
+              <span>40</span>
+              <span>0</span>
+            </div>
+
+            <div class="eq-nodes-matrix" id="equalizer-nodes">
+              <div class="eq-capsule" style="--h: 65%;">
+                <div class="capsule-core"><span class="cap-glyph">✕</span></div>
+              </div>
+              <div class="eq-capsule" style="--h: 90%;">
+                <div class="capsule-core"><span class="cap-num">3</span></div>
+              </div>
+              <div class="eq-capsule" style="--h: 80%;">
+                <div class="capsule-core"><span class="cap-num">4</span></div>
+              </div>
+              <div class="eq-capsule" style="--h: 95%;">
+                <div class="capsule-core"><span class="cap-num">7</span></div>
+              </div>
+              <div class="eq-capsule" style="--h: 60%;">
+                <div class="capsule-core"><span class="cap-num">41</span></div>
+              </div>
+              <div class="eq-capsule" style="--h: 85%;">
+                <div class="capsule-core"><span class="cap-num">6</span></div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+      </div>
+
+      <!-- RIGHT COLUMN: Analytics, Evidence Grounding & Action Dock -->
+      <div class="grid-column col-right">
+
+        <!-- Card 1: Coordsail (Grounded Telemetry Sliders) -->
+        <section class="command-card card-coordsail">
+          <div class="card-header-bar">
+            <div class="card-title-group">
+              <span class="card-dot-icon"></span>
+              <h3 class="card-title-text">Coordsail // Telemetry Sliders</h3>
+            </div>
+            <span class="heart-glyph">💜</span>
+          </div>
+
+          <div class="coordsail-sliders-stack">
+            <div class="slider-row">
+              <span class="slider-label">Conis</span>
+              <div class="slider-track"><div class="slider-fill" style="width: 75%;"></div></div>
+              <span class="slider-val">75%</span>
+            </div>
+            <div class="slider-row">
+              <span class="slider-label">Positivity</span>
+              <div class="slider-track"><div class="slider-fill highlight-fill" style="width: 100%;"></div></div>
+              <span class="slider-val highlight-val">100%</span>
+            </div>
+            <div class="slider-row">
+              <span class="slider-label">Pemthod</span>
+              <div class="slider-track"><div class="slider-fill" style="width: 60%;"></div></div>
+              <span class="slider-val">60%</span>
+            </div>
+            <div class="slider-row">
+              <span class="slider-label">Reactivity</span>
+              <div class="slider-track"><div class="slider-fill" style="width: 90%;"></div></div>
+              <span class="slider-val">90%</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- Card 2: Days (Threat Frequency Timeline) -->
+        <section class="command-card card-days">
+          <div class="card-header-bar">
+            <div class="card-title-group">
+              <span class="card-dot-icon"></span>
+              <h3 class="card-title-text">Days // Threat Density</h3>
+            </div>
+            <span class="pill-badge-mini">64% DENSITY</span>
+          </div>
+
+          <div class="days-progress-stack">
+            <div class="days-item">
+              <span class="day-lbl">Tris</span>
+              <div class="day-track"><div class="day-fill" id="bar-tris" style="width: 82%;"></div></div>
+              <span class="day-gem"></span>
+            </div>
+            <div class="days-item">
+              <span class="day-lbl">Days</span>
+              <div class="day-track"><div class="day-fill" id="bar-days" style="width: 65%;"></div></div>
+              <span class="day-gem"></span>
+            </div>
+          </div>
+        </section>
+
+        <!-- Card 3: Coneina Tin (Grounded Privacy Citation & Holographic Scan Pill) -->
+        <section class="command-card card-coneina-action">
+          <div class="card-header-bar">
+            <div class="card-title-group">
+              <span class="card-dot-icon"></span>
+              <h3 class="card-title-text">Coneina Tin // Privacy Grounding</h3>
+            </div>
+            <span class="evidence-status-pill" id="ev-quote-summary">DIRECT CITATION</span>
+          </div>
+
+          <div class="coneina-content-wrapper">
+            <div class="evidence-quote-container">
+              <div class="quote-header">
+                <span class="quote-icon">📄</span>
+                <span class="quote-heading">Grounded Privacy Policy Excerpt</span>
+              </div>
+              <p class="quote-text-body" id="dashboard-evidence-quote">
+                "We reserve the right to share identity credentials and network telemetry with undisclosed verification contractors."
+              </p>
+            </div>
+
+            <!-- Floating Holographic Scan Action Trigger -->
+            <button class="holographic-scan-btn" id="btn-floating-scan">
+              <div class="scan-glass-reticle">
+                <svg viewBox="0 0 40 40" class="scan-reticle-svg">
+                  <circle cx="18" cy="18" r="11" stroke="#ffffff" stroke-width="2.5" fill="none"/>
+                  <line x1="26" y1="26" x2="35" y2="35" stroke="#ffffff" stroke-width="3.5" stroke-linecap="round"/>
+                  <path d="M18 9 L19 14 L24 15 L19 16 L18 21 L17 16 L12 15 L17 14 Z" fill="#d946ef"/>
+                </svg>
+              </div>
+              <div class="scan-btn-labels">
+                <span class="scan-main-label">AWAKEN SPIDER-SENSE</span>
+                <span class="scan-sub-label">Execute Full Neural & Rule Scan</span>
+              </div>
+            </button>
+          </div>
+        </section>
+
+      </div>
+    </main>
+
+    <!-- Bottom Section: Explainable "Why?" Detections Grid -->
+    <section class="command-card card-why-explanations">
+      <div class="card-header-bar">
+        <div class="card-title-group">
+          <span class="card-dot-icon pulse-dot"></span>
+          <h3 class="card-title-text">Explainable Spider-Sense Detections (Why?)</h3>
+        </div>
+        <span class="signals-counter-badge" id="dash-signals-count">4 SIGNALS FLAGGED</span>
+      </div>
+
+      <div class="signals-horizontal-grid" id="dash-signals-list">
+        <!-- Dynamically rendered by app.js -->
+      </div>
+    </section>
+
+    <!-- Footer System Diagnostics -->
+    <footer class="laptop-footer">
+      <div class="footer-left">
+        <span class="footer-led"></span>
+        <span>WEBGUARDIAN SPIDER-SENSE OS // 12-HOUR HACKATHON BUILD</span>
+      </div>
+      <div class="footer-right">
+        <span>MEMBER 5: EXTENSION + LIVELY FRONTEND</span>
+        <span class="footer-sep">|</span>
+        <span>V1.0.0 HUNTER COMMAND</span>
+      </div>
+    </footer>
+
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
