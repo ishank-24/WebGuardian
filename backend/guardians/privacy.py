@@ -242,18 +242,18 @@ class PrivacyGuardian:
     def _risk_from_score(score: int) -> str:
 
         if score <= 25:
-            return "SAFE"
+            return "safe"
 
         if score <= 50:
-            return "LOW"
+            return "low"
 
         if score <= 70:
-            return "MEDIUM"
+            return "medium"
 
         if score <= 85:
-            return "HIGH"
+            return "high"
 
-        return "CRITICAL"
+        return "critical"
 
     @staticmethod
     def _keyword_fallback(
@@ -364,7 +364,7 @@ class PrivacyGuardian:
 
             return {
                 "score": 0,
-                "risk_level": "SAFE",
+                "risk_level": "safe",
                 "signals": [],
                 "note": "No privacy-policy text was provided.",
             }
@@ -414,7 +414,7 @@ Analyze these four categories:
 
 For every privacy concern:
 
-- give a severity: LOW, MEDIUM, or HIGH
+- give a severity: low, medium, or high
 - explain the concern briefly
 
 Return ONLY valid JSON.
@@ -423,7 +423,7 @@ Required format:
 
 {{
   "score": 0,
-  "risk_level": "SAFE",
+  "risk_level": "safe",
   "signals": [
     {{
       "type": "data_collection",
@@ -437,11 +437,11 @@ The score must be an integer from 0 to 100.
 
 Use this interpretation:
 
-0-25 SAFE
-26-50 LOW
-51-70 MEDIUM
-71-85 HIGH
-86-100 CRITICAL
+0-25 safe
+26-50 low
+51-70 medium
+71-85 high
+86-100 critical
 
 SUPPLIED POLICY EXCERPTS:
 
@@ -553,38 +553,4 @@ def analyze_privacy(
 
     return _guardian.analyze(
         policy_text
-    )
-
-
-# -----------------------------------------
-# Local testing
-# -----------------------------------------
-
-if __name__ == "__main__":
-
-    demo_policy = """
-    We collect your name, email address, IP address,
-    device information, and browsing activity.
-
-    We may share your information with advertising
-    partners, analytics providers, and other third parties.
-
-    We use cookies and similar tracking technologies
-    to personalize advertisements.
-
-    We retain personal information for as long as
-    necessary for our business purposes.
-    """
-
-    guardian = PrivacyGuardian()
-
-    result = guardian.analyze(
-        demo_policy
-    )
-
-    print(
-        json.dumps(
-            result,
-            indent=2
-        )
     )
