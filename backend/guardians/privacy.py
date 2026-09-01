@@ -2,9 +2,7 @@
 WebGuardian - Privacy Guardian
 
 Privacy-policy analysis using:
-PDF/text -> chunks -> MiniLM embeddings -> FAISS -> Phi-3
-
-The module accepts privacy-policy text directly.
+text -> chunks -> MiniLM embeddings -> FAISS -> Phi-3
 """
 
 import json
@@ -20,8 +18,6 @@ DEFAULT_EMBEDDING_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
 DEFAULT_LLM_MODEL = "microsoft/Phi-3-mini-4k-instruct"
 
 
-# Queries used to retrieve policy passages relevant to the four
-# privacy categories.
 PRIVACY_QUERIES = {
     "data_collection": (
         "What personal information and user data does the company collect, "
@@ -55,7 +51,6 @@ class PrivacyGuardian:
         self.embedding_model_name = embedding_model_name
         self.llm_model_name = llm_model_name
 
-        # Load embedding model
         self.embedding_model = SentenceTransformer(
             embedding_model_name
         )
@@ -63,7 +58,6 @@ class PrivacyGuardian:
         self.tokenizer = None
         self.model = None
 
-        # Load language model
         if load_llm:
             self.tokenizer = AutoTokenizer.from_pretrained(
                 llm_model_name
@@ -76,7 +70,6 @@ class PrivacyGuardian:
 
     @staticmethod
     def clean_text(text: str) -> str:
-        """Clean whitespace from policy text."""
         text = re.sub(r"\s+", " ", text or "").strip()
         return text
 
@@ -86,7 +79,6 @@ class PrivacyGuardian:
         chunk_size: int = 900,
         overlap: int = 120,
     ) -> List[str]:
-        """Split policy text into overlapping character-based chunks."""
 
         text = text.strip()
 
@@ -94,12 +86,14 @@ class PrivacyGuardian:
             return []
 
         chunks = []
-
         start = 0
         step = max(1, chunk_size - overlap)
 
         while start < len(text):
-            chunk = text[start:start + chunk_size].strip()
+
+            chunk = text[
+                start:start + chunk_size
+            ].strip()
 
             if chunk:
                 chunks.append(chunk)
@@ -109,10 +103,11 @@ class PrivacyGuardian:
         return chunks
 
     def build_index(self, chunks: List[str]):
-        """Create FAISS similarity-search index."""
 
         if not chunks:
-            raise ValueError("No policy text was provided.")
+            raise ValueError(
+                "No policy text was provided."
+            )
 
         embeddings = self.embedding_model.encode(
             chunks,
@@ -135,7 +130,6 @@ class PrivacyGuardian:
         index,
         top_k: int = 3,
     ) -> List[str]:
-        """Retrieve the most relevant policy chunks."""
 
         query_embedding = self.embedding_model.encode(
             [query],
@@ -143,11 +137,14 @@ class PrivacyGuardian:
             normalize_embeddings=True,
         ).astype("float32")
 
-        top_k = min(top_k, len(chunks))
+        top_k = min(
+            top_k,
+            len(chunks)
+        )
 
         _, indices = index.search(
             query_embedding,
-            top_k,
+            top_k
         )
 
         return [
@@ -161,11 +158,10 @@ class PrivacyGuardian:
         policy_text: str,
         top_k_per_category: int = 3,
     ) -> Dict[str, List[str]]:
-        """Retrieve relevant excerpts for each privacy category."""
 
-        cleaned_text = self.clean_text(policy_text)
-
-        chunks = self.chunk_text(cleaned_text)
+        chunks = self.chunk_text(
+            self.clean_text(policy_text)
+        )
 
         index, _ = self.build_index(chunks)
 
@@ -187,11 +183,14 @@ class PrivacyGuardian:
         prompt: str,
         max_new_tokens: int = 700,
     ) -> str:
-        """Generate an answer using Phi-3."""
 
-        if self.model is None or self.tokenizer is None:
+        if (
+            self.model is None
+            or self.tokenizer is None
+        ):
             raise RuntimeError(
-                "LLM is not loaded. Initialize with load_llm=True."
+                "LLM is not loaded. "
+                "Initialize with load_llm=True."
             )
 
         inputs = self.tokenizer(
@@ -208,7 +207,6 @@ class PrivacyGuardian:
             temperature=0.0,
         )
 
-        # Decode only newly generated tokens.
         generated = outputs[0][
             inputs["input_ids"].shape[1]:
         ]
@@ -222,7 +220,6 @@ class PrivacyGuardian:
     def _extract_json(
         text: str,
     ) -> Optional[Dict[str, Any]]:
-        """Extract JSON from model output."""
 
         match = re.search(
             r"\{.*\}",
@@ -243,7 +240,6 @@ class PrivacyGuardian:
 
     @staticmethod
     def _risk_from_score(score: int) -> str:
-        """Convert numeric score to risk level."""
 
         if score <= 25:
             return "SAFE"
@@ -263,16 +259,10 @@ class PrivacyGuardian:
     def _keyword_fallback(
         policy_text: str,
     ) -> Dict[str, Any]:
-        """
-        Deterministic fallback.
-
-        Used if the LLM is unavailable or produces
-        invalid JSON.
-        """
 
         text = policy_text.lower()
 
-        findings = []
+        signals = []
         score = 0
 
         checks = [
@@ -322,7 +312,12 @@ class PrivacyGuardian:
             ),
         ]
 
-        for category, terms, points, finding_text in checks:
+        for (
+            category,
+            terms,
+            points,
+            finding_text,
+        ) in checks:
 
             matched = next(
                 (
@@ -337,12 +332,13 @@ class PrivacyGuardian:
 
                 score += points
 
-                findings.append(
+                signals.append(
                     {
-                        "category": category,
-                        "risk": "MEDIUM",
-                        "finding": finding_text,
+                        "type": category,
+                        "severity": "medium",
+                        "explanation": finding_text,
                         "evidence": matched,
+                        "source": f"{category}-fallback",
                     }
                 )
 
@@ -350,8 +346,10 @@ class PrivacyGuardian:
 
         return {
             "score": score,
-            "risk_level": PrivacyGuardian._risk_from_score(score),
-            "findings": findings,
+            "risk_level": PrivacyGuardian._risk_from_score(
+                score
+            ),
+            "signals": signals,
             "note": "Fallback rule-based analysis was used.",
         }
 
@@ -359,18 +357,17 @@ class PrivacyGuardian:
         self,
         policy_text: str,
     ) -> Dict[str, Any]:
-        """Analyze a privacy policy."""
 
-        policy_text = self.clean_text(policy_text)
+        policy_text = self.clean_text(
+            policy_text
+        )
 
-        # Only return SAFE when no text was provided.
-        # Short policies should still be analyzed.
         if not policy_text:
 
             return {
                 "score": 0,
                 "risk_level": "SAFE",
-                "findings": [],
+                "signals": [],
                 "note": "No privacy-policy text was provided.",
             }
 
@@ -388,14 +385,16 @@ class PrivacyGuardian:
 
             for i, chunk in enumerate(
                 chunks,
-                1,
+                1
             ):
 
                 context_parts.append(
                     f"[{category}-{i}] {chunk}"
                 )
 
-        context = "\n".join(context_parts)
+        context = "\n".join(
+            context_parts
+        )
 
         prompt = f"""
 You are WebGuardian's Privacy Guardian.
@@ -423,18 +422,17 @@ For every privacy concern:
 - include the source label
 
 Return ONLY valid JSON.
-No markdown.
 
 Required format:
 
 {{
   "score": 0,
   "risk_level": "SAFE",
-  "findings": [
+  "signals": [
     {{
-      "category": "data_collection",
-      "risk": "MEDIUM",
-      "finding": "Brief explanation.",
+      "type": "data_collection",
+      "severity": "high",
+      "explanation": "Brief explanation.",
       "evidence": "Exact short quote.",
       "source": "data_collection-1"
     }}
@@ -458,23 +456,23 @@ SUPPLIED POLICY EXCERPTS:
 
         try:
 
-            raw = self._generate(prompt)
+            raw = self._generate(
+                prompt
+            )
 
-            result = self._extract_json(raw)
+            result = self._extract_json(
+                raw
+            )
 
-            # If the model did not produce valid JSON,
-            # use deterministic fallback.
             if not result:
-
                 return self._keyword_fallback(
                     policy_text
                 )
 
-            # Normalize score.
             score = int(
                 result.get(
                     "score",
-                    0,
+                    0
                 )
             )
 
@@ -482,52 +480,52 @@ SUPPLIED POLICY EXCERPTS:
                 0,
                 min(
                     100,
-                    score,
-                ),
+                    score
+                )
             )
 
-            findings = result.get(
-                "findings",
-                [],
+            signals = result.get(
+                "signals",
+                []
             )
 
             if not isinstance(
-                findings,
-                list,
+                signals,
+                list
             ):
-                findings = []
+                signals = []
 
-            cleaned_findings = []
+            cleaned_signals = []
 
-            for finding in findings:
+            for signal in signals:
 
                 if not isinstance(
-                    finding,
-                    dict,
+                    signal,
+                    dict
                 ):
                     continue
 
-                cleaned_findings.append(
+                cleaned_signals.append(
                     {
-                        "category": finding.get(
-                            "category",
-                            "unknown",
+                        "type": signal.get(
+                            "type",
+                            "privacy"
                         ),
-                        "risk": finding.get(
-                            "risk",
-                            "MEDIUM",
+                        "severity": signal.get(
+                            "severity",
+                            "medium"
+                        ).lower(),
+                        "explanation": signal.get(
+                            "explanation",
+                            "Privacy concern detected."
                         ),
-                        "finding": finding.get(
-                            "finding",
-                            "Not stated",
-                        ),
-                        "evidence": finding.get(
+                        "evidence": signal.get(
                             "evidence",
-                            "Not stated",
+                            "Not stated"
                         ),
-                        "source": finding.get(
+                        "source": signal.get(
                             "source",
-                            "unknown",
+                            "unknown"
                         ),
                     }
                 )
@@ -537,7 +535,7 @@ SUPPLIED POLICY EXCERPTS:
                 "risk_level": self._risk_from_score(
                     score
                 ),
-                "findings": cleaned_findings,
+                "signals": cleaned_signals,
             }
 
         except Exception as exc:
@@ -551,9 +549,9 @@ SUPPLIED POLICY EXCERPTS:
             return fallback
 
 
-# ---------------------------------------------------------
+# -----------------------------------------
 # Backend integration
-# ---------------------------------------------------------
+# -----------------------------------------
 
 _guardian = None
 
@@ -561,17 +559,10 @@ _guardian = None
 def analyze_privacy(
     policy_text: str,
 ) -> Dict[str, Any]:
-    """
-    Function for the team's FastAPI backend.
-
-    The PrivacyGuardian model is loaded only once
-    and reused for subsequent requests.
-    """
 
     global _guardian
 
     if _guardian is None:
-
         _guardian = PrivacyGuardian()
 
     return _guardian.analyze(
@@ -579,9 +570,9 @@ def analyze_privacy(
     )
 
 
-# ---------------------------------------------------------
+# -----------------------------------------
 # Local testing
-# ---------------------------------------------------------
+# -----------------------------------------
 
 if __name__ == "__main__":
 
@@ -608,6 +599,6 @@ if __name__ == "__main__":
     print(
         json.dumps(
             result,
-            indent=2,
+            indent=2
         )
     )
