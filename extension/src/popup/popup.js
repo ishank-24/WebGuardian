@@ -80,9 +80,9 @@ document.addEventListener("DOMContentLoaded", async () => {
   // Open Full Command Center
   btnOpenDashboard.addEventListener("click", () => {
     if (chrome.tabs && chrome.tabs.create) {
-      chrome.tabs.create({ url: chrome.runtime.getURL("../../index.html") });
+      chrome.tabs.create({ url: chrome.runtime.getURL("dashboard/index.html") });
     } else {
-      window.open("../../index.html", "_blank");
+      window.open("dashboard/index.html", "_blank");
     }
   });
 
