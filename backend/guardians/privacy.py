@@ -337,8 +337,6 @@ class PrivacyGuardian:
                         "type": category,
                         "severity": "medium",
                         "explanation": finding_text,
-                        "evidence": matched,
-                        "source": f"{category}-fallback",
                     }
                 )
 
@@ -416,10 +414,8 @@ Analyze these four categories:
 
 For every privacy concern:
 
-- give a risk: LOW, MEDIUM, or HIGH
+- give a severity: LOW, MEDIUM, or HIGH
 - explain the concern briefly
-- provide a short exact evidence quote
-- include the source label
 
 Return ONLY valid JSON.
 
@@ -432,9 +428,7 @@ Required format:
     {{
       "type": "data_collection",
       "severity": "high",
-      "explanation": "Brief explanation.",
-      "evidence": "Exact short quote.",
-      "source": "data_collection-1"
+      "explanation": "Brief explanation."
     }}
   ]
 }}
@@ -518,14 +512,6 @@ SUPPLIED POLICY EXCERPTS:
                         "explanation": signal.get(
                             "explanation",
                             "Privacy concern detected."
-                        ),
-                        "evidence": signal.get(
-                            "evidence",
-                            "Not stated"
-                        ),
-                        "source": signal.get(
-                            "source",
-                            "unknown"
                         ),
                     }
                 )
