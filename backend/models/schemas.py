@@ -14,6 +14,7 @@ class AnalysisRequest(BaseModel):
     visible_text: str = ""
     forms: List[FormInfo] = Field(default_factory=list)
     buttons: List[str] = Field(default_factory=list)
+    has_password_input: bool = False
     privacy_policy_text: str = ""
 
 
@@ -21,6 +22,12 @@ class Signal(BaseModel):
     type: str
     severity: str
     explanation: str
+
+
+class ManipulationResult(BaseModel):
+    score: int
+    risk_level: str
+    signals: List[Signal]
 
 
 class GuardianResult(BaseModel):
@@ -33,9 +40,8 @@ class AnalysisResponse(BaseModel):
     risk_level: str
 
     threat: GuardianResult
-    manipulation: GuardianResult
+    manipulation: ManipulationResult
     privacy: GuardianResult
 
     explanations: List[str]
     recommendation: str
-

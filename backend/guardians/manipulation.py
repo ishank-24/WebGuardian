@@ -142,12 +142,16 @@ def analyze_manipulation(text):
     score = min(score, 100)
 
     # Risk level
-    if score >= 70:
+    if score >= 86:
+        risk_level = "critical"
+    elif score >= 71:
         risk_level = "high"
-    elif score >= 40:
+    elif score >= 51:
         risk_level = "medium"
-    else:
+    elif score >= 26:
         risk_level = "low"
+    else:
+        risk_level = "safe"
 
     return {
         "score": score,

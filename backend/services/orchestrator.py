@@ -1,77 +1,91 @@
-from models.schemas import (
-    AnalysisRequest,
-    AnalysisResponse,
-    GuardianResult,
-)
-
-from scoring.spider_sense import (
-    calculate_spider_sense,
-    get_risk_level,
-)
+from guardians.threat import analyze_threat
+from guardians.manipulation import analyze_manipulation
+from guardians.privacy import analyze_privacy
 
 
-def analyze_page(request: AnalysisRequest) -> AnalysisResponse:
+def analyze_page(request):
 
-    # Temporary mock results.
-    # These will later be replaced by the
-    # Threat, Manipulation, and Privacy Guardians.
+    threat = analyze_threat(request)
 
-    threat = GuardianResult(
-        score=0,
-        signals=[]
+    manipulation = analyze_manipulation(
+        request.visible_text or ""
     )
 
-    manipulation = GuardianResult(
-        score=0,
-        signals=[]
+    privacy = analyze_privacy(
+        request.privacy_policy_text or request.visible_text or ""
     )
 
-    privacy = GuardianResult(
-        score=0,
-        signals=[]
+    if hasattr(threat, "model_dump"):
+        threat = threat.model_dump()
+
+    if hasattr(manipulation, "model_dump"):
+        manipulation = manipulation.model_dump()
+
+    if hasattr(privacy, "model_dump"):
+        privacy = privacy.model_dump()
+
+    threat_score = threat["score"]
+    manipulation_score = manipulation["score"]
+    privacy_score = privacy["score"]
+
+    final_score = round(
+        threat_score * 0.50
+        + manipulation_score * 0.25
+        + privacy_score * 0.25
     )
 
-    # Calculate overall Spider-Sense score
-    spider_score = calculate_spider_sense(
-        threat.score,
-        manipulation.score,
-        privacy.score,
-    )
+    if final_score >= 86:
+        risk_level = "CRITICAL"
+    elif final_score >= 71:
+        risk_level = "HIGH"
+    elif final_score >= 51:
+        risk_level = "MEDIUM"
+    elif final_score >= 26:
+        risk_level = "LOW"
+    else:
+        risk_level = "SAFE"
 
-    # Convert score to risk level
-    risk_level = get_risk_level(spider_score)
-
-    # Collect explanations from all guardians
     explanations = []
 
-    for result in [threat, manipulation, privacy]:
-        for signal in result.signals:
-            explanations.append(signal.explanation)
-
-    # Generate recommendation
-    if risk_level == "SAFE":
-        recommendation = "This page appears relatively safe."
-
-    elif risk_level == "LOW":
-        recommendation = "Proceed with caution."
-
-    elif risk_level == "MEDIUM":
-        recommendation = "Review the warnings before continuing."
-
-    elif risk_level == "HIGH":
-        recommendation = "Avoid entering sensitive information."
-
-    else:
-        recommendation = (
-            "Do not enter sensitive information or credentials."
+    if threat_score >= 60:
+        explanations.append(
+            "High threat pattern detected."
         )
 
-    return AnalysisResponse(
-        spider_sense_score=spider_score,
-        risk_level=risk_level,
-        threat=threat,
-        manipulation=manipulation,
-        privacy=privacy,
-        explanations=explanations,
-        recommendation=recommendation,
-    )
+    if manipulation_score >= 50:
+        explanations.append(
+            "Manipulative or deceptive patterns detected."
+        )
+
+    if privacy_score >= 50:
+        explanations.append(
+            "Potentially risky privacy practices detected."
+        )
+
+    if not explanations:
+        explanations.append(
+            "No major risks detected."
+        )
+
+    if final_score >= 70:
+        recommendation = (
+            "Do not enter passwords or financial credentials."
+        )
+    elif final_score >= 50:
+        recommendation = (
+            "Proceed with caution and review the detected risks."
+        )
+    else:
+        recommendation = (
+            "No major risk detected."
+        )
+
+    return {
+        "spider_sense_score": final_score,
+        "risk_level": risk_level,
+        "threat": threat,
+        "manipulation": manipulation,
+        "privacy": privacy,
+        "explanations": explanations,
+        "recommendation": recommendation,
+    }

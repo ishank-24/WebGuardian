@@ -81,7 +81,6 @@ KNOWN_BRANDS = [
 
 def get_domain(url: str) -> str:
     """Extract the domain from a URL."""
-
     try:
         parsed = urlparse(url)
 
@@ -96,15 +95,12 @@ def get_domain(url: str) -> str:
 
 def contains_ip_address(domain: str) -> bool:
     """Check whether the domain is an IPv4 address."""
-
     pattern = r"^\d{1,3}(\.\d{1,3}){3}$"
-
     return bool(re.match(pattern, domain))
 
 
 def detect_keyword_matches(text: str, keywords):
     """Return all matching keywords."""
-
     text = text.lower()
 
     return [
@@ -116,7 +112,6 @@ def detect_keyword_matches(text: str, keywords):
 
 def risk_from_score(score: int) -> str:
     """Convert score to lowercase risk level."""
-
     if score <= 25:
         return "safe"
 
@@ -139,7 +134,6 @@ def add_signal(
     explanation,
 ):
     """Add a signal to the result."""
-
     signals.append(
         {
             "type": signal_type,
@@ -153,9 +147,8 @@ def add_signal(
 # Main Threat Analysis
 # ---------------------------------
 
-def analyze_threat(
-    request: AnalysisRequest,
-):
+def analyze_threat(request: AnalysisRequest):
+    """Analyze a webpage request for threat indicators."""
 
     score = 0
     signals = []
@@ -180,7 +173,6 @@ def analyze_threat(
     # ---------------------------------
 
     if contains_ip_address(domain):
-
         score += 20
         suspicious_domain = True
 
@@ -194,7 +186,6 @@ def analyze_threat(
     hyphen_count = domain.count("-")
 
     if hyphen_count >= 3:
-
         score += 10
         suspicious_domain = True
 
@@ -202,7 +193,10 @@ def analyze_threat(
             signals,
             "excessive_hyphens",
             "medium",
-            f"The domain contains {hyphen_count} hyphens, which can be associated with suspicious domains.",
+            (
+                f"The domain contains {hyphen_count} hyphens, "
+                "which can be associated with suspicious domains."
+            ),
         )
 
     matched_domain_keywords = detect_keyword_matches(
@@ -211,7 +205,6 @@ def analyze_threat(
     )
 
     if len(matched_domain_keywords) >= 2:
-
         score += 15
         suspicious_domain = True
 
@@ -220,8 +213,7 @@ def analyze_threat(
             "suspicious_domain_pattern",
             "medium",
             (
-                "The domain contains multiple suspicious "
-                "keywords: "
+                "The domain contains multiple suspicious keywords: "
                 + ", ".join(matched_domain_keywords)
                 + "."
             ),
@@ -232,13 +224,11 @@ def analyze_threat(
     # ---------------------------------
 
     for form in forms:
-
         if form.has_password:
             has_password = True
             break
 
     if has_password:
-
         score += 10
 
         add_signal(
@@ -258,7 +248,6 @@ def analyze_threat(
     )
 
     if urgency_matches:
-
         has_urgency = True
 
         score += min(
@@ -287,7 +276,6 @@ def analyze_threat(
     )
 
     if account_threat_matches:
-
         score += 15
 
         add_signal(
@@ -311,7 +299,6 @@ def analyze_threat(
     )
 
     if scam_matches:
-
         score += min(
             len(scam_matches) * 5,
             15,
@@ -333,11 +320,8 @@ def analyze_threat(
     # ---------------------------------
 
     for brand in KNOWN_BRANDS:
-
         if brand in page_text:
-
             if brand not in domain:
-
                 score += 25
                 suspicious_domain = True
 
@@ -359,7 +343,6 @@ def analyze_threat(
     # ---------------------------------
 
     if has_password and suspicious_domain:
-
         score += 20
 
         add_signal(
@@ -377,7 +360,6 @@ def analyze_threat(
         and suspicious_domain
         and has_urgency
     ):
-
         score += 15
 
         add_signal(
