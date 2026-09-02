@@ -1,245 +1,159 @@
 """
 WebGuardian - Privacy Guardian
 
-Privacy-policy analysis using:
-text -> chunks -> MiniLM embeddings -> FAISS -> Phi-3
+Lightweight rule-based privacy-policy analysis.
+CPU-friendly version with no FAISS, SentenceTransformer,
+Transformers, or LLM dependencies.
 """
 
-import json
 import re
-from typing import Any, Dict, List, Optional
-
-import faiss
-from sentence_transformers import SentenceTransformer
-from transformers import AutoModelForCausalLM, AutoTokenizer
+from typing import Any, Dict, List
 
 
-DEFAULT_EMBEDDING_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
-DEFAULT_LLM_MODEL = "microsoft/Phi-3-mini-4k-instruct"
-
-
-PRIVACY_QUERIES = {
-    "data_collection": (
-        "What personal information and user data does the company collect, "
-        "including name email phone location IP address device browsing and "
-        "sensitive information?"
-    ),
-    "data_sharing": (
-        "Does the company share, sell, disclose, or transfer personal data "
-        "to third parties, advertisers, affiliates, service providers, "
-        "partners, or data brokers?"
-    ),
-    "tracking": (
-        "Does the company use cookies, analytics, tracking technologies, "
-        "advertising identifiers, personalized advertising, or cross-site tracking?"
-    ),
-    "retention": (
-        "How long does the company retain personal information and what does "
-        "the policy say about deletion, account deletion, or retention periods?"
-    ),
-}
+PRIVACY_CHECKS = [
+    {
+        "category": "data_collection",
+        "terms": [
+            "personal information",
+            "personal data",
+            "name",
+            "email address",
+            "email",
+            "phone number",
+            "phone",
+            "telephone",
+            "location",
+            "geolocation",
+            "ip address",
+            "browsing activity",
+            "browsing history",
+            "device information",
+            "device data",
+            "technical information",
+            "account information",
+            "payment information",
+            "financial information",
+            "biometric information",
+            "identifiers",
+        ],
+        "points": 8,
+        "severity": "MEDIUM",
+        "explanation": (
+            "The policy mentions collection of personal or user information."
+        ),
+    },
+    {
+        "category": "data_sharing",
+        "terms": [
+            "third parties",
+            "third-party",
+            "advertising partners",
+            "advertisers",
+            "service providers",
+            "business partners",
+            "affiliates",
+            "partners",
+            "data brokers",
+            "disclose",
+            "share your information",
+            "share personal information",
+            "sell your information",
+            "sell personal information",
+            "sale of personal information",
+        ],
+        "points": 15,
+        "severity": "MEDIUM",
+        "explanation": (
+            "The policy mentions sharing, disclosing, or selling "
+            "information to other parties."
+        ),
+    },
+    {
+        "category": "tracking",
+        "terms": [
+            "cookies",
+            "cookie",
+            "tracking technologies",
+            "tracking technology",
+            "web beacons",
+            "pixels",
+            "analytics",
+            "advertising id",
+            "advertising identifier",
+            "device identifiers",
+            "personalized advertising",
+            "targeted advertising",
+            "cross-site tracking",
+            "online tracking",
+        ],
+        "points": 12,
+        "severity": "MEDIUM",
+        "explanation": (
+            "The policy mentions cookies, analytics, advertising, "
+            "or tracking technologies."
+        ),
+    },
+    {
+        "category": "retention",
+        "terms": [
+            "retain",
+            "retains",
+            "retained",
+            "retention",
+            "retention period",
+            "stored for as long as",
+            "keep your information",
+            "keep personal information",
+            "delete your data",
+            "deletion of your data",
+            "data deletion",
+            "account deletion",
+        ],
+        "points": 8,
+        "severity": "LOW",
+        "explanation": (
+            "The policy contains information about data retention or deletion."
+        ),
+    },
+]
 
 
 class PrivacyGuardian:
-
     def __init__(
         self,
-        embedding_model_name: str = DEFAULT_EMBEDDING_MODEL,
-        llm_model_name: str = DEFAULT_LLM_MODEL,
-        load_llm: bool = True,
+        embedding_model_name: str = "",
+        llm_model_name: str = "",
+        load_llm: bool = False,
     ):
+        # Kept for compatibility with older initialization code.
         self.embedding_model_name = embedding_model_name
         self.llm_model_name = llm_model_name
-
-        self.embedding_model = SentenceTransformer(
-            embedding_model_name
-        )
-
+        self.embedding_model = None
         self.tokenizer = None
         self.model = None
 
-        if load_llm:
-            self.tokenizer = AutoTokenizer.from_pretrained(
-                llm_model_name
-            )
-
-            self.model = AutoModelForCausalLM.from_pretrained(
-                llm_model_name,
-                device_map="auto",
-            )
-
     @staticmethod
-    def clean_text(text: str) -> str:
-        text = re.sub(r"\s+", " ", text or "").strip()
-        return text
+    def clean_text(text: Any) -> str:
+        """
+        Safely normalize input text.
 
-    @staticmethod
-    def chunk_text(
-        text: str,
-        chunk_size: int = 900,
-        overlap: int = 120,
-    ) -> List[str]:
+        None, empty values, or non-string input will not cause
+        the privacy guardian to crash.
+        """
+        if text is None:
+            return ""
 
-        text = text.strip()
+        if not isinstance(text, str):
+            text = str(text)
 
-        if not text:
-            return []
-
-        chunks = []
-        start = 0
-        step = max(1, chunk_size - overlap)
-
-        while start < len(text):
-
-            chunk = text[
-                start:start + chunk_size
-            ].strip()
-
-            if chunk:
-                chunks.append(chunk)
-
-            start += step
-
-        return chunks
-
-    def build_index(self, chunks: List[str]):
-
-        if not chunks:
-            raise ValueError(
-                "No policy text was provided."
-            )
-
-        embeddings = self.embedding_model.encode(
-            chunks,
-            convert_to_numpy=True,
-            normalize_embeddings=True,
-        ).astype("float32")
-
-        index = faiss.IndexFlatIP(
-            embeddings.shape[1]
-        )
-
-        index.add(embeddings)
-
-        return index, embeddings
-
-    def retrieve(
-        self,
-        query: str,
-        chunks: List[str],
-        index,
-        top_k: int = 3,
-    ) -> List[str]:
-
-        query_embedding = self.embedding_model.encode(
-            [query],
-            convert_to_numpy=True,
-            normalize_embeddings=True,
-        ).astype("float32")
-
-        top_k = min(
-            top_k,
-            len(chunks)
-        )
-
-        _, indices = index.search(
-            query_embedding,
-            top_k
-        )
-
-        return [
-            chunks[i]
-            for i in indices[0]
-            if i >= 0
-        ]
-
-    def retrieve_all_categories(
-        self,
-        policy_text: str,
-        top_k_per_category: int = 3,
-    ) -> Dict[str, List[str]]:
-
-        chunks = self.chunk_text(
-            self.clean_text(policy_text)
-        )
-
-        index, _ = self.build_index(chunks)
-
-        retrieved = {}
-
-        for category, query in PRIVACY_QUERIES.items():
-
-            retrieved[category] = self.retrieve(
-                query,
-                chunks,
-                index,
-                top_k=top_k_per_category,
-            )
-
-        return retrieved
-
-    def _generate(
-        self,
-        prompt: str,
-        max_new_tokens: int = 700,
-    ) -> str:
-
-        if (
-            self.model is None
-            or self.tokenizer is None
-        ):
-            raise RuntimeError(
-                "LLM is not loaded. "
-                "Initialize with load_llm=True."
-            )
-
-        inputs = self.tokenizer(
-            prompt,
-            return_tensors="pt",
-            truncation=True,
-            max_length=3500,
-        ).to(self.model.device)
-
-        outputs = self.model.generate(
-            **inputs,
-            max_new_tokens=max_new_tokens,
-            do_sample=False,
-            temperature=0.0,
-        )
-
-        generated = outputs[0][
-            inputs["input_ids"].shape[1]:
-        ]
-
-        return self.tokenizer.decode(
-            generated,
-            skip_special_tokens=True,
-        ).strip()
-
-    @staticmethod
-    def _extract_json(
-        text: str,
-    ) -> Optional[Dict[str, Any]]:
-
-        match = re.search(
-            r"\{.*\}",
-            text,
-            re.DOTALL,
-        )
-
-        if not match:
-            return None
-
-        candidate = match.group(0)
-
-        try:
-            return json.loads(candidate)
-
-        except json.JSONDecodeError:
-            return None
+        return re.sub(r"\s+", " ", text).strip()
 
     @staticmethod
     def _risk_from_score(score: int) -> str:
+        """
+        Convert numeric privacy score to API risk level.
+        """
+        score = max(0, min(int(score), 100))
 
         if score <= 25:
             return "safe"
@@ -256,87 +170,61 @@ class PrivacyGuardian:
         return "critical"
 
     @staticmethod
+    def _find_matches(
+        text: str,
+        terms: List[str],
+    ) -> List[str]:
+        """
+        Find privacy keywords safely.
+        """
+        matches: List[str] = []
+
+        if not text:
+            return matches
+
+        for term in terms:
+            if not term:
+                continue
+
+            pattern = r"\b" + re.escape(term) + r"\b"
+
+            if re.search(pattern, text, flags=re.IGNORECASE):
+                matches.append(term)
+
+        return matches
+
+    @staticmethod
     def _keyword_fallback(
         policy_text: str,
     ) -> Dict[str, Any]:
-
+        """
+        Basic keyword-based privacy analysis.
+        """
         text = policy_text.lower()
 
-        signals = []
+        signals: List[Dict[str, str]] = []
         score = 0
 
-        checks = [
-            (
-                "data_collection",
-                [
-                    "location",
-                    "ip address",
-                    "browsing activity",
-                    "device information",
-                ],
-                10,
-                "The policy mentions collection of user/device or browsing information.",
-            ),
-            (
-                "data_sharing",
-                [
-                    "third parties",
-                    "third-party",
-                    "advertising partners",
-                    "service providers",
-                ],
-                15,
-                "The policy mentions sharing information with third parties or partners.",
-            ),
-            (
-                "tracking",
-                [
-                    "cookies",
-                    "tracking technologies",
-                    "analytics",
-                    "advertising id",
-                ],
-                15,
-                "The policy mentions cookies, analytics, or tracking technologies.",
-            ),
-            (
-                "retention",
-                [
-                    "retain",
-                    "retention",
-                    "stored for as long as",
-                    "delete your data",
-                ],
-                10,
-                "The policy contains information about data retention or deletion.",
-            ),
-        ]
+        for check in PRIVACY_CHECKS:
+            category = check["category"]
+            terms = check["terms"]
+            points = check["points"]
+            severity = check["severity"]
+            explanation = check["explanation"]
 
-        for (
-            category,
-            terms,
-            points,
-            finding_text,
-        ) in checks:
-
-            matched = next(
-                (
-                    term
-                    for term in terms
-                    if term in text
-                ),
-                None,
+            matches = PrivacyGuardian._find_matches(
+                text,
+                terms,
             )
 
-            if matched:
-
+            if matches:
                 score += points
 
                 signals.append(
                     {
                         "type": category,
-                        "severity": "medium",
-                        "explanation": finding_text,
+                        "severity": severity,
+                        "explanation": explanation,
                     }
                 )
 
@@ -344,212 +232,229 @@ class PrivacyGuardian:
 
         return {
             "score": score,
-            "risk_level": PrivacyGuardian._risk_from_score(
-                score
-            ),
+            "risk_level": PrivacyGuardian._risk_from_score(score),
             "signals": signals,
-            "note": "Fallback rule-based analysis was used.",
+        }
+
+    @staticmethod
+    def _analyze_sensitive_data(
+        policy_text: str,
+    ) -> Dict[str, Any]:
+        """
+        Detect potentially sensitive personal information.
+        """
+        text = policy_text.lower()
+
+        sensitive_terms = [
+            "health information",
+            "medical information",
+            "medical data",
+            "health data",
+            "biometric information",
+            "biometric data",
+            "genetic information",
+            "financial information",
+            "financial data",
+            "credit card",
+            "bank account",
+            "precise location",
+        ]
+
+        matches = PrivacyGuardian._find_matches(
+            text,
+            sensitive_terms,
+        )
+
+        if not matches:
+            return {
+                "score": 0,
+                "signals": [],
+            }
+
+        return {
+            "score": min(len(matches) * 10, 25),
+            "signals": [
+                {
+                    "type": "sensitive_data",
+                    "severity": "HIGH",
+                    "explanation": (
+                        "The policy mentions collection or processing "
+                        "of potentially sensitive personal information."
+                    ),
+                }
+            ],
+        }
+
+    @staticmethod
+    def _analyze_sale(
+        policy_text: str,
+    ) -> Dict[str, Any]:
+        """
+        Detect selling of personal information or data-broker activity.
+        """
+        text = policy_text.lower()
+
+        sale_terms = [
+            "sell your personal information",
+            "sell personal information",
+            "sale of personal information",
+            "sell your data",
+            "sell personal data",
+            "data broker",
+            "data brokers",
+        ]
+
+        matches = PrivacyGuardian._find_matches(
+            text,
+            sale_terms,
+        )
+
+        if not matches:
+            return {
+                "score": 0,
+                "signals": [],
+            }
+
+        return {
+            "score": 25,
+            "signals": [
+                {
+                    "type": "data_sale",
+                    "severity": "HIGH",
+                    "explanation": (
+                        "The policy mentions selling personal information "
+                        "or sharing information with data brokers."
+                    ),
+                }
+            ],
+        }
+
+    @staticmethod
+    def _analyze_location(
+        policy_text: str,
+    ) -> Dict[str, Any]:
+        """
+        Detect location-related data collection.
+        """
+        text = policy_text.lower()
+
+        location_terms = [
+            "precise location",
+            "gps location",
+            "geolocation",
+            "real-time location",
+            "location data",
+            "location information",
+        ]
+
+        matches = PrivacyGuardian._find_matches(
+            text,
+            location_terms,
+        )
+
+        if not matches:
+            return {
+                "score": 0,
+                "signals": [],
+            }
+
+        return {
+            "score": 10,
+            "signals": [
+                {
+                    "type": "location_collection",
+                    "severity": "MEDIUM",
+                    "explanation": (
+                        "The policy mentions collection or use "
+                        "of location information."
+                    ),
+                }
+            ],
         }
 
     def analyze(
         self,
-        policy_text: str,
+        policy_text: Any,
     ) -> Dict[str, Any]:
+        """
+        Analyze privacy-policy text.
 
-        policy_text = self.clean_text(
-            policy_text
-        )
+        Always returns exactly:
+            score
+            risk_level
+            signals
+        """
+        policy_text = self.clean_text(policy_text)
 
+        # Empty or missing privacy policy.
         if not policy_text:
-
             return {
                 "score": 0,
-                "risk_level": "safe",
+                "risk_level": "SAFE",
                 "signals": [],
-                "note": "No privacy-policy text was provided.",
             }
 
-        retrieved = self.retrieve_all_categories(
+        # Base keyword analysis.
+        result = self._keyword_fallback(
             policy_text
         )
 
-        context_parts = []
-
-        for category, chunks in retrieved.items():
-
-            context_parts.append(
-                f"\n### {category.upper()}"
-            )
-
-            for i, chunk in enumerate(
-                chunks,
-                1
-            ):
-
-                context_parts.append(
-                    f"[{category}-{i}] {chunk}"
-                )
-
-        context = "\n".join(
-            context_parts
+        # Additional privacy checks.
+        sensitive_result = self._analyze_sensitive_data(
+            policy_text
         )
 
-        prompt = f"""
-You are WebGuardian's Privacy Guardian.
+        sale_result = self._analyze_sale(
+            policy_text
+        )
 
-Analyze ONLY the supplied privacy-policy excerpts.
+        location_result = self._analyze_location(
+            policy_text
+        )
 
-Do not use outside knowledge.
-Do not invent facts.
+        # Combine scores.
+        total_score = (
+            result["score"]
+            + sensitive_result["score"]
+            + sale_result["score"]
+            + location_result["score"]
+        )
 
-If something is not stated in the excerpts,
-say "Not stated".
+        total_score = min(max(total_score, 0), 100)
 
-Analyze these four categories:
+        # Combine signals.
+        signals = (
+            result["signals"]
+            + sensitive_result["signals"]
+            + sale_result["signals"]
+            + location_result["signals"]
+        )
 
-1. data_collection
-2. data_sharing
-3. tracking
-4. retention
+        return {
+            "score": total_score,
+            "risk_level": self._risk_from_score(total_score),
+            "signals": signals,
+        }
 
-For every privacy concern:
-
-- give a severity: low, medium, or high
-- explain the concern briefly
-
-Return ONLY valid JSON.
-
-Required format:
-
-{{
-  "score": 0,
-  "risk_level": "safe",
-  "signals": [
-    {{
-      "type": "data_collection",
-      "severity": "high",
-      "explanation": "Brief explanation."
-    }}
-  ]
-}}
-
-The score must be an integer from 0 to 100.
-
-Use this interpretation:
-
-0-25 safe
-26-50 low
-51-70 medium
-71-85 high
-86-100 critical
-
-SUPPLIED POLICY EXCERPTS:
-
-{context}
-"""
-
-        try:
-
-            raw = self._generate(
-                prompt
-            )
-
-            result = self._extract_json(
-                raw
-            )
-
-            if not result:
-                return self._keyword_fallback(
-                    policy_text
-                )
-
-            score = int(
-                result.get(
-                    "score",
-                    0
-                )
-            )
-
-            score = max(
-                0,
-                min(
-                    100,
-                    score
-                )
-            )
-
-            signals = result.get(
-                "signals",
-                []
-            )
-
-            if not isinstance(
-                signals,
-                list
-            ):
-                signals = []
-
-            cleaned_signals = []
-
-            for signal in signals:
-
-                if not isinstance(
-                    signal,
-                    dict
-                ):
-                    continue
-
-                cleaned_signals.append(
-                    {
-                        "type": signal.get(
-                            "type",
-                            "privacy"
-                        ),
-                        "severity": signal.get(
-                            "severity",
-                            "medium"
-                        ).lower(),
-                        "explanation": signal.get(
-                            "explanation",
-                            "Privacy concern detected."
-                        ),
-                    }
-                )
-
-            return {
-                "score": score,
-                "risk_level": self._risk_from_score(
-                    score
-                ),
-                "signals": cleaned_signals,
-            }
-
-        except Exception as exc:
-
-            fallback = self._keyword_fallback(
-                policy_text
-            )
-
-            fallback["error"] = str(exc)
-
-            return fallback
-
-
-# -----------------------------------------
-# Backend integration
-# -----------------------------------------
 
 _guardian = None
 
 
 def analyze_privacy(
-    policy_text: str,
+    policy_text: Any,
 ) -> Dict[str, Any]:
+    """
+    Public Privacy Guardian entry point.
 
+    Safe for normal strings, empty strings, None,
+    and other accidental input types.
+    """
     global _guardian
 
     if _guardian is None:
-        _guardian = PrivacyGuardian()
+        _guardian = PrivacyGuardian(
+            load_llm=False
+        )
 
     return _guardian.analyze(
         policy_text
