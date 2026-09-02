@@ -32,6 +32,7 @@ class ManipulationResult(BaseModel):
 
 class GuardianResult(BaseModel):
     score: float = 0
+    risk_level: str = "safe"
     signals: List[Signal] = Field(default_factory=list)
 
 
